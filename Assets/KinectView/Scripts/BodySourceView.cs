@@ -11,10 +11,13 @@ public class BodySourceView : MonoBehaviour
     private Dictionary<ulong, GameObject> _Bodies = new Dictionary<ulong, GameObject>();
     private BodySourceManager _BodyManager;
     public GameObject steamHead;
-    
+    public float scaler = .25f;
+    public float zdif = .05f;
+
+    public Dictionary<Kinect.JointType, Vector3> bonePositions = new Dictionary<Kinect.JointType, Vector3>();
     private Dictionary<Kinect.JointType, Kinect.JointType> _BoneMap = new Dictionary<Kinect.JointType, Kinect.JointType>()
     {
-        /*
+        
         { Kinect.JointType.FootLeft, Kinect.JointType.AnkleLeft },
         { Kinect.JointType.AnkleLeft, Kinect.JointType.KneeLeft },
         { Kinect.JointType.KneeLeft, Kinect.JointType.HipLeft },
@@ -24,7 +27,7 @@ public class BodySourceView : MonoBehaviour
         { Kinect.JointType.AnkleRight, Kinect.JointType.KneeRight },
         { Kinect.JointType.KneeRight, Kinect.JointType.HipRight },
         { Kinect.JointType.HipRight, Kinect.JointType.SpineBase },
-        */
+        
 
 
         { Kinect.JointType.HandTipLeft, Kinect.JointType.HandLeft },
@@ -91,9 +94,11 @@ public class BodySourceView : MonoBehaviour
                 _Bodies.Remove(trackingId);
             }
         }
-
+   
         foreach(var body in data)
         {
+            
+            
             if (body == null)
             {
                 continue;
@@ -101,7 +106,8 @@ public class BodySourceView : MonoBehaviour
             
             if(body.IsTracked)
             {
-                if(!_Bodies.ContainsKey(body.TrackingId))
+                
+                if (!_Bodies.ContainsKey(body.TrackingId))
                 {
                     _Bodies[body.TrackingId] = CreateBodyObject(body.TrackingId);
                 }
@@ -114,7 +120,7 @@ public class BodySourceView : MonoBehaviour
     private GameObject CreateBodyObject(ulong id)
     {
         GameObject body = new GameObject("Body:" + id);
-        
+        body.transform.position.Set(steamHead.transform.position.x, steamHead.transform.position.y, steamHead.transform.position.z);
         for (Kinect.JointType jt = Kinect.JointType.SpineBase; jt <= Kinect.JointType.ThumbRight; jt++)
         {
             GameObject jointObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -124,7 +130,7 @@ public class BodySourceView : MonoBehaviour
             lr.material = BoneMaterial;
             lr.SetWidth(0.05f, 0.05f);
             
-            jointObj.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
+            jointObj.transform.localScale = new Vector3(0.06f, 0.06f, 0.06f);
             jointObj.name = jt.ToString();
             jointObj.transform.parent = body.transform;
         }
@@ -134,6 +140,17 @@ public class BodySourceView : MonoBehaviour
     
     private void RefreshBodyObject(Kinect.Body body, GameObject bodyObject)
     {
+        
+
+        Vector3 kHeadPos = GetVector3FromJoint(body.Joints[Kinect.JointType.Head])*scaler;
+
+        Vector3 sHeadPos =  new Vector3(steamHead.transform.position.x, steamHead.transform.position.y, -steamHead.transform.position.z+zdif);
+
+        Vector3 headDif = sHeadPos - kHeadPos;
+
+        
+
+        
         for (Kinect.JointType jt = Kinect.JointType.SpineBase; jt <= Kinect.JointType.ThumbRight; jt++)
         {
             Kinect.Joint sourceJoint = body.Joints[jt];
@@ -145,13 +162,16 @@ public class BodySourceView : MonoBehaviour
             }
             
             Transform jointObj = bodyObject.transform.FindChild(jt.ToString());
-            jointObj.localPosition = GetVector3FromJoint(sourceJoint);
-            
+            jointObj.localPosition = new Vector3((headDif + GetVector3FromJoint(sourceJoint) * scaler).x, (headDif + GetVector3FromJoint(sourceJoint) * scaler).y, -(headDif + GetVector3FromJoint(sourceJoint) * scaler).z);
+
+            bonePositions[sourceJoint.JointType] = jointObj.localPosition;
+
+
             LineRenderer lr = jointObj.GetComponent<LineRenderer>();
             if(targetJoint.HasValue)
             {
                 lr.SetPosition(0, jointObj.localPosition);
-                lr.SetPosition(1, GetVector3FromJoint(targetJoint.Value));
+                lr.SetPosition(1, new Vector3((headDif + scaler * GetVector3FromJoint(targetJoint.Value)).x, (headDif + scaler * GetVector3FromJoint(targetJoint.Value)).y,-(headDif + scaler * GetVector3FromJoint(targetJoint.Value)).z));
                 lr.SetColors(GetColorForState (sourceJoint.TrackingState), GetColorForState(targetJoint.Value.TrackingState));
             }
             else
@@ -159,6 +179,9 @@ public class BodySourceView : MonoBehaviour
                 lr.enabled = false;
             }
         }
+
+    
+        //bodyObject.transform.position.Set(steamHead.transform.position.x, steamHead.transform.position.y, steamHead.transform.position.z);
     }
     
     private static Color GetColorForState(Kinect.TrackingState state)

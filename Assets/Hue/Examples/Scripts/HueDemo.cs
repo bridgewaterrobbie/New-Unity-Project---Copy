@@ -7,9 +7,9 @@ namespace UnityHue.Examples{
 	public class HueDemo : MonoBehaviour {
 		public HueInfoStorer storer;
 		public GameObject hueUIRepresentationPrefab;
-		public GameObject createUserScreen;
-		public Text createUserText;
-		public Button createUserButton;
+	//	public GameObject createUserScreen;
+	//	public Text createUserText;
+	//	public Button createUserButton;
 		public RectTransform lampMenu;
 		public string applicationName = "UHue", deviceName ="MyHue";
 
@@ -28,7 +28,7 @@ namespace UnityHue.Examples{
 		}
 		public void OnLightsRetrieved()
 		{
-			createUserScreen.SetActive(false);
+			//createUserScreen.SetActive(false);
 			foreach(var lamp in HueBridge.instance.Lights)
 			{
 				GameObject representation = Instantiate(hueUIRepresentationPrefab, lampMenu) as GameObject;
@@ -38,20 +38,20 @@ namespace UnityHue.Examples{
 		}
 		public void OnBridgesDiscovered()
 		{
-			createUserScreen.SetActive(true);
+			//createUserScreen.SetActive(true);
 			if(HueBridge.instance.Bridges.Count < 1)
 			{
-				createUserText.text = "Couldn't find any bridges in your Network";
-				createUserButton.gameObject.SetActive(false);
+			//	createUserText.text = "Couldn't find any bridges in your Network";
+				//createUserButton.gameObject.SetActive(false);
 				Debug.LogWarning("Failed to find Bridges in your Network");
-			}else
-				createUserButton.gameObject.SetActive(true);
+			}//else
+				//createUserButton.gameObject.SetActive(true);
 				
 		}
 		public void RegisterApp()
 		{
 			HueBridge.instance.CreateUser(applicationName, deviceName, ()=> HueBridge.instance.UpdateLights(OnLightsRetrieved), OnRegistrationError);
-			createUserButton.gameObject.SetActive(false);
+			//createUserButton.gameObject.SetActive(false);
 		}
 		public void HandleLightsError(HueErrorInfo error)
 		{
@@ -66,8 +66,8 @@ namespace UnityHue.Examples{
 		{
 			if(error.errorCode == 101)
 			{
-				createUserText.text = "The Link Button on the Bridge wasn't pressed. Press it and try again";
-				createUserButton.gameObject.SetActive(true);
+				//createUserText.text = "The Link Button on the Bridge wasn't pressed. Press it and try again";
+				//createUserButton.gameObject.SetActive(true);
 			}else
 				HueErrorInfo.LogError(error);
 				

@@ -14,6 +14,7 @@ public class GestureSourceManager : MonoBehaviour
     {
         public string name;
         public float confidence;
+        
 
         public EventArgs(string _name, float _confidence)
         {
@@ -22,7 +23,10 @@ public class GestureSourceManager : MonoBehaviour
         }
     }
 
+
     public BodySourceManager _BodySource;
+    
+
     public string databasePath;
     private KinectSensor _Sensor;
     private VisualGestureBuilderFrameSource _Source;
@@ -63,6 +67,10 @@ public class GestureSourceManager : MonoBehaviour
 
             // Load all gestures
             IList<Gesture> gesturesList = _Database.AvailableGestures;
+            foreach(Gesture g in gesturesList)
+            {
+                Debug.Log("Loaded Gesture: " + g.Name);
+            }
             for (int g = 0; g < gesturesList.Count; g++)
             {
                 Gesture gesture = gesturesList[g];
@@ -143,8 +151,8 @@ public class GestureSourceManager : MonoBehaviour
 
                             if (result != null)
                             {
-
-                                if(result.Confidence>maxConfidence)
+                                OnGesture(new EventArgs(gesture.Name, result.Confidence));
+                                if (result.Confidence>maxConfidence)
                                 {
                                     maxConfidence = result.Confidence;
                                     bestMatchName = gesture.Name;
@@ -154,10 +162,29 @@ public class GestureSourceManager : MonoBehaviour
                             }
                         }
                     }
-                    if(maxConfidence>0)
-                        Debug.Log("Detected Gesture " + bestMatchName + " with Confidence " + maxConfidence);
-                    OnGesture(new EventArgs(bestMatchName, maxConfidence));
+                   // if(maxConfidence>0)
+                     //   Debug.Log("Detected Gesture " + bestMatchName + " with Confidence " + maxConfidence);
+                   // OnGesture(new EventArgs(bestMatchName, maxConfidence));
                 }
+
+                IDictionary<Gesture, ContinuousGestureResult> continuousResults = frame.ContinuousGestureResults;
+                if(continuousResults!=null)
+                {
+                    foreach (Gesture gesture in _Source.Gestures)
+                    {
+                        if (gesture.GestureType == GestureType.Continuous)
+                        {
+                            ContinuousGestureResult result = null;
+                            continuousResults.TryGetValue(gesture, out result);
+                            if (result != null)
+                            {
+                               // Debug.Log("Continuous Gesture " + gesture.Name + " with progress " + result.Progress);
+                                OnGesture(new EventArgs(gesture.Name, result.Progress));
+                            }
+                        }
+                    }
+                }
+
             }
         }
     }
